@@ -1,0 +1,29 @@
+# Core Dependencies
+streamlit>=1.32.0
+smolagents>=0.1.0
+langchain>=0.1.0
+langchain-groq>=0.1.0
+langchain-community>=0.1.0
+langchain-core>=0.1.0
+faiss-cpu>=1.7.4
+
+# LLM and Embeddings
+transformers>=4.36.0
+openai-whisper>=20231117
+sentence-transformers>=2.2.2
+
+# YouTube and Media Processing
+pytube>=15.0.0
+ffmpeg-python>=0.2.0
+yt-dlp>=2023.11.16
+
+# Web Search and Data Processing
+duckduckgo-search>=4.1.0
+markdownify>=0.11.6
+requests>=2.31.0
+
+# Utility Libraries
+pytz>=2023.3
+python-dotenv>=1.0.0
+pyyaml>=6.0.1
+uuid>=1.30
