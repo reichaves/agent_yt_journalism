@@ -1,0 +1,25 @@
+# Configuração do Streamlit Cloud
+deploy:
+  # Configuração do aplicativo Streamlit
+  streamlit:
+    # Nome do arquivo Python principal
+    entrypoint: app.py
+    
+    # Configuração do ambiente
+    required_files:
+      - requirements.txt
+      - packages.txt
+    
+    # Opções de computação
+    compute:
+      # Tipo de instância (CPU, GPU, etc.)
+      instance_type: "cpu"
+      
+      # Recursos alocados
+      memory: "4Gi"
+      cpu: "1"
+    
+    # Opções de comportamento
+    behavior:
+      # Tempo máximo de inatividade antes de colocar o app em sleep (minutos)
+      inactivity_timeout: 60
