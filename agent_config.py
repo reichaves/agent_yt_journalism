@@ -105,20 +105,8 @@ def create_agent(groq_api_key: str, huggingface_api_token: str) -> CodeAgent:
         planning_interval=None,
         name="JournalistAssistant",
         description="An AI agent that helps journalists analyze YouTube videos in Brazilian Portuguese",
-        prompt_templates=prompt_templates,
-        authorized_imports=[
-            "datetime",
-            "random",
-            "pandas",
-            "math",
-            "statistics",
-            "re",
-            "collections",
-            "time",
-            "json",
-            "os",
-            "sys"
-        ]
+        prompt_templates=prompt_templates
+        # Removido: authorized_imports
     )
     
     return agent
