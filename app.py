@@ -1,6 +1,3 @@
-# -*- coding: utf-8
-#
-
 import streamlit as st
 import os
 import yaml
@@ -22,10 +19,6 @@ from smolagents.tools import Tool
 
 # Import our custom agent configuration
 from agent_config import create_agent, load_prompt_templates
-from tools.youtube_transcriber import YouTubeTranscriberTool
-from tools.web_search import WebSearchTool
-from tools.rag_query import RAGQueryTool
-from tools.journalistic_highlight import JournalisticHighlightTool
 
 # Configure page settings
 st.set_page_config(
@@ -202,297 +195,62 @@ if 'conversation_history' not in st.session_state:
 if 'vectorstore' not in st.session_state:
     st.session_state.vectorstore = None
 
-os.remove(audio_file)
-            os.rmdir(temp_dir)
-            
-            return f"Transcrição completa do vídeo: {yt.title}\n\n{result['text']}"
-        except Exception as e:
-            return f"Erro ao transcrever o vídeo: {str(e)}"
-    
-    #############################################################
-    # TOOL 2: VIDEO SUMMARY TOOL
-    #############################################################
-    @tool
-    def summarize_transcript(transcript: str = None) -> str:
-        """Generates a summary of the video transcript.
-        Args:
-            transcript: The transcript to summarize. If None, uses the stored transcription.
-        """
-        try:
-            # Use the stored transcription if transcript is None
-            if transcript is None:
-                if st.session_state.transcription is None:
-                    return "Não há transcrição disponível. Por favor, transcreva um vídeo primeiro."
-                transcript = st.session_state.transcription
-            
-            # Initialize Groq LLM
-            llm = ChatGroq(
-                groq_api_key=groq_api_key,
-                model_name="deepseek-r1-distill-llama-70b",
-                temperature=0.2
-            )
-            
-            prompt = f"""
-            Você é um assistente especializado em criar resumos de vídeos. Por favor, crie um resumo 
-            estruturado da seguinte transcrição de um vídeo em Português do Brasil. O resumo deve:
-            
-            1. Ter um comprimento de aproximadamente 500 palavras
-            2. Começar com uma visão geral do assunto principal do vídeo
-            3. Incluir os principais pontos e argumentos apresentados
-            4. Estar organizado em parágrafos bem estruturados
-            5. Manter uma linguagem neutra e objetiva
-            
-            Transcrição:
-            {transcript}
-            """
-            
-            response = llm.invoke(prompt)
-            summary = response.content
-            
-            # Store the summary in session state
-            st.session_state.summary = summary
-            
-            return f"Resumo do vídeo:\n\n{summary}"
-        except Exception as e:
-            return f"Erro ao gerar o resumo: {str(e)}"
-    
-    #############################################################
-    # TOOL 3: WEB SEARCH TOOL
-    #############################################################
-    @tool
-    def search_web(query: str) -> str:
-        """Searches the web for information.
-        Args:
-            query: The search query to find information on the web.
-        """
-        try:
-            from duckduckgo_search import DDGS
-            
-            search = DDGS()
-            results = search.text(query, max_results=5)
-            
-            if not results:
-                return f"Nenhum resultado encontrado para a busca: '{query}'"
-            
-            formatted_results = "Resultados da busca:\n\n"
-            for result in results:
-                formatted_results += f"**{result['title']}**\n{result['body']}\nFonte: {result['href']}\n\n"
-            
-            return formatted_results
-        except Exception as e:
-            return f"Erro ao realizar a busca: {str(e)}"
-    
-    #############################################################
-    # TOOL 4: JOURNALISTIC HIGHLIGHT FINDER
-    #############################################################
-    @tool
-    def find_journalistic_highlights(context: str = None, search_results: str = None) -> str:
-        """Identifies journalistically relevant highlights from the video based on current events.
-        Args:
-            context: The video transcript or summary. If None, uses stored data.
-            search_results: Additional web search results for context. If None, performs a search.
-        """
-        try:
-            # Use stored data if not provided
-            if context is None:
-                if st.session_state.summary is not None:
-                    context = st.session_state.summary
-                elif st.session_state.transcription is not None:
-                    context = st.session_state.transcription
-                else:
-                    return "Não há transcrição ou resumo disponível. Por favor, transcreva e resuma um vídeo primeiro."
-            
-            # If no search results provided, perform a relevant search
-            if search_results is None:
-                # Extract keywords from context
-                llm = ChatGroq(
-                    groq_api_key=groq_api_key,
-                    model_name="deepseek-r1-distill-llama-70b",
-                    temperature=0.1
-                )
-                
-                keyword_prompt = f"""
-                Extraia 3-5 palavras-chave ou frases do seguinte texto que seriam úteis 
-                para pesquisar o contexto atual das notícias. Separe-as por vírgulas.
-                
-                Texto:
-                {context[:2000]}  # Limiting to first 2000 chars
-                
-                Palavras-chave:
-                """
-                
-                keyword_response = llm.invoke(keyword_prompt)
-                keywords = keyword_response.content.strip()
-                
-                # Search for current news context
-                search_query = f"{keywords} notícias atuais Brasil"
-                search_results = search_web(search_query)
-            
-            # Initialize LLM for highlight analysis
-            llm = ChatGroq(
-                groq_api_key=groq_api_key,
-                model_name="deepseek-r1-distill-llama-70b",
-                temperature=0.3
-            )
-            
-            prompt = f"""
-            Você é um jornalista investigativo experiente. Analise o texto a seguir, que é a transcrição
-            ou resumo de um vídeo em Português do Brasil, e destaque trechos que merecem investigação
-            jornalística adicional. Considere:
-            
-            1. Afirmações que podem ser verificadas factualmente
-            2. Conexões com notícias ou eventos atuais
-            3. Declarações controversas ou potencialmente enganosas
-            4. Implicações para políticas públicas ou interesse social
-            5. Informações que parecem novas ou pouco divulgadas
-            
-            Formate sua resposta como:
-            
-            # Pontos de Interesse Jornalístico
-            
-            ## Destaque 1: [Título breve]
-            **Trecho relevante:** [Trecho exato do texto]
-            **Por que investigar:** [Explicação sobre o valor jornalístico]
-            **Sugestão de abordagem:** [Como um jornalista poderia verificar ou explorar este ponto]
-            
-            [Repita o formato para cada destaque, com no mínimo 3 e no máximo 5 destaques]
-            
-            Texto a analisar:
-            {context}
-            
-            Contexto atual (resultados de busca na web):
-            {search_results}
-            """
-            
-            response = llm.invoke(prompt)
-            highlights = response.content
-            
-            # Store highlights in session state
-            st.session_state.highlights = highlights
-            
-            return highlights
-        except Exception as e:
-            return f"Erro ao encontrar destaques jornalísticos: {str(e)}"
-    
-    #############################################################
-    # TOOL 5: RAG QUERY TOOL
-    #############################################################
-    @tool
-    def query_transcript(question: str) -> str:
-        """Answers a question about the video content using RAG.
-        Args:
-            question: The question to answer about the video content
-        """
-        try:
-            if st.session_state.vectorstore is None:
-                return "Não há transcrição indexada disponível. Por favor, transcreva um vídeo primeiro."
-            
-            # Initialize Groq LLM
-            llm = ChatGroq(
-                groq_api_key=groq_api_key,
-                model_name="deepseek-r1-distill-llama-70b",
-                temperature=0.2
-            )
-            
-            # Create retriever from vectorstore
-            retriever = st.session_state.vectorstore.as_retriever(
-                search_kwargs={"k": 3}
-            )
-            
-            # Retrieve relevant contexts
-            docs = retriever.get_relevant_documents(question)
-            context = "\n\n".join([doc.page_content for doc in docs])
-            
-            # Generate response with LLM
-            prompt = f"""
-            Responda à seguinte pergunta com base no contexto fornecido da transcrição de um vídeo.
-            Se a informação não estiver disponível no contexto, responda honestamente que não consegue
-            encontrar essa informação na transcrição do vídeo.
-            
-            Contexto da transcrição:
-            {context}
-            
-            Pergunta: {question}
-            
-            Resposta:
-            """
-            
-            response = llm.invoke(prompt)
-            
-            return f"Resposta baseada na transcrição do vídeo:\n\n{response.content}"
-        except Exception as e:
-            return f"Erro ao responder à pergunta: {str(e)}"
-    
-    #############################################################
-    # TOOL 6: FINAL ANSWER TOOL
-    #############################################################
-    @tool
-    def final_answer(answer: Any) -> Any:
-        """Provides a final answer to the given problem.
-        Args:
-            answer: The final answer to the problem
-        """
-        return answer
-    
-    # Initialize prompt templates
-    prompt_templates = {
-        "system_prompt": """
-        Você é um agente de IA especializado em analisar vídeos do YouTube para fins jornalísticos.
-        Seu objetivo é ajudar jornalistas a extrair informações valiosas de vídeos em Português do Brasil.
-        
-        Para resolver as tarefas, você deve seguir um ciclo de 'Thought:', 'Code:', e 'Observation:'.
-        
-        Em cada etapa, você deve:
-        1. Explicar seu raciocínio no bloco 'Thought:'
-        2. Escrever código Python simples no bloco 'Code:' (encerrado com '<end_code>')
-        3. Observar os resultados no bloco 'Observation:'
-        
-        Suas respostas devem ser claras, estruturadas e úteis para jornalistas investigativos.
-        No final, você deve fornecer uma resposta completa usando a ferramenta `final_answer`.
-        
-        Você tem acesso às seguintes ferramentas:
-        - transcribe_youtube_video: Transcreve um vídeo do YouTube
-        - summarize_transcript: Resume uma transcrição
-        - search_web: Busca informações na web
-        - find_journalistic_highlights: Identifica pontos de interesse jornalístico
-        - query_transcript: Responde perguntas sobre o conteúdo do vídeo
-        - final_answer: Fornece uma resposta final
-        
-        Lembre-se de que os jornalistas precisam de informações precisas, contextualizadas e com
-        valor noticioso. Sempre indique quando uma informação precisa ser verificada ou investigada
-        mais a fundo.
-        """
+
+def process_video(youtube_url, agent):
+    """Process a YouTube video URL and return results"""
+    results = {
+        "transcription": None,
+        "summary": None,
+        "highlights": None,
+        "steps": []
     }
     
-    # Initialize model using custom configuration
-    model = HfApiModel(
-        max_tokens=2096,
-        temperature=0.5,
-        model_id="deepseek-r1-distill-llama-70b",
-        custom_role_conversions=None
-    )
+    try:
+        # Step 1: Transcribe the video
+        transcription_task = f"Transcreva o vídeo do YouTube com URL {youtube_url}."
+        transcription_result = agent.run(transcription_task)
+        results["steps"].append({
+            "name": "Transcrição",
+            "content": transcription_result
+        })
+        
+        # Extract and store the transcription
+        # We assume the transcription is in the session state now (set by the tool)
+        
+        # Step 2: Summarize the video
+        if st.session_state.transcription:
+            summary_task = "Resuma a transcrição do vídeo que foi transcrito."
+            summary_result = agent.run(summary_task)
+            results["steps"].append({
+                "name": "Resumo",
+                "content": summary_result
+            })
+        
+        # Step 3: Find journalistic highlights
+        if st.session_state.summary or st.session_state.transcription:
+            highlights_task = "Identifique pontos de interesse jornalístico no vídeo baseados na transcrição ou resumo, considerando o contexto atual de notícias. Pesquise informações adicionais na web se necessário."
+            highlights_result = agent.run(highlights_task)
+            results["steps"].append({
+                "name": "Destaques Jornalísticos",
+                "content": highlights_result
+            })
+        
+        # Set the result objects
+        results["transcription"] = st.session_state.transcription
+        results["summary"] = st.session_state.summary
+        results["highlights"] = st.session_state.highlights
+        
+        return results
     
-    # Create agent with tools
-    agent = CodeAgent(
-        model=model,
-        tools=[
-            transcribe_youtube_video,
-            summarize_transcript,
-            search_web,
-            find_journalistic_highlights,
-            query_transcript,
-            final_answer
-        ],
-        max_steps=8,
-        verbosity_level=1,
-        grammar=None,
-        planning_interval=None,
-        name=None,
-        description=None,
-        prompt_templates=prompt_templates
-    )
-    
-    return agent
+    except Exception as e:
+        import traceback
+        error_msg = f"Erro ao processar o vídeo: {str(e)}\n\n{traceback.format_exc()}"
+        results["steps"].append({
+            "name": "Erro",
+            "content": error_msg
+        })
+        return results
+
 
 def display_conversation_history():
     """Display the conversation history with appropriate styling"""
@@ -531,6 +289,7 @@ def display_conversation_history():
                                 st.markdown(f"<div class='observation-box'><strong>👁️ Observação:</strong> {observation}</div>", unsafe_allow_html=True)
             else:
                 st.markdown(f"<div class='agent-message'><strong>Assistente:</strong> {content}</div>", unsafe_allow_html=True)
+
 
 # Main Application Logic
 if groq_api_key and huggingface_api_token:
@@ -681,6 +440,7 @@ if groq_api_key and huggingface_api_token:
 
 else:
     st.warning("Por favor, insira as chaves de API do Groq e do Hugging Face para começar.")
+
 
 if __name__ == "__main__":
     # Set up configuration for Whisper and other dependencies
