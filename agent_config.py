@@ -1,11 +1,12 @@
 import os
 import yaml
 from typing import Dict, List, Any, Optional
-from smolagents import CodeAgent, HfApiModel
+from smolagents import CodeAgent
 from tools.youtube_transcriber import YouTubeTranscriberTool
 from tools.web_search import WebSearchTool
 from tools.rag_query import RAGQueryTool
 from tools.journalistic_highlight import JournalisticHighlightTool
+from groq_model import GroqModel
 
 def load_prompt_templates() -> Dict[str, Any]:
     """Load prompt templates from YAML file or return defaults"""
@@ -81,12 +82,12 @@ def create_agent(groq_api_key: str, huggingface_api_token: str) -> CodeAgent:
     # Load prompt templates
     prompt_templates = load_prompt_templates()
     
-    # Initialize model
-    model = HfApiModel(
-        max_tokens=4096,
+    # Initialize model using our custom Groq implementation
+    model = GroqModel(
+        api_key=groq_api_key,
+        model="deepseek-r1-distill-llama-70b",  # Modelo do DeepSeek disponível no Groq
         temperature=0.5,
-        model_id="deepseek-r1-distill-llama-70b",
-        custom_role_conversions=None
+        max_tokens=4096
     )
     
     # Create agent with tools
@@ -106,7 +107,6 @@ def create_agent(groq_api_key: str, huggingface_api_token: str) -> CodeAgent:
         name="JournalistAssistant",
         description="An AI agent that helps journalists analyze YouTube videos in Brazilian Portuguese",
         prompt_templates=prompt_templates
-        # Removido: authorized_imports
     )
     
     return agent
