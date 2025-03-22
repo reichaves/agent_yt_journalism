@@ -1,21 +1,21 @@
 import os
 import yaml
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Any
 from smolagents import CodeAgent
 from tools.youtube_transcriber import YouTubeTranscriberTool
 from tools.web_search import WebSearchTool
 from tools.rag_query import RAGQueryTool
 from tools.journalistic_highlight import JournalisticHighlightTool
+from tools.summarization import SummarizationTool
+from tools.index_transcript import IndexTranscriptTool
 from groq_model import GroqModel
 
 def load_prompt_templates() -> Dict[str, Any]:
-    """Load prompt templates from YAML file or return defaults"""
     try:
         if os.path.exists("prompts.yaml"):
             with open("prompts.yaml", 'r', encoding='utf-8') as stream:
                 return yaml.safe_load(stream)
         else:
-            # Return default prompt templates
             return {
                 "system_prompt": """
                 Você é um agente de IA especializado em analisar vídeos do YouTube para fins jornalísticos.
@@ -34,7 +34,9 @@ def load_prompt_templates() -> Dict[str, Any]:
                 Você tem acesso às seguintes ferramentas:
                 - youtube_transcriber: Transcreve um vídeo do YouTube
                 - web_search: Busca informações na web
-                - rag_query: Responde perguntas sobre o conteúdo do vídeo usando RAG
+                - video_summarizer: Resume a transcrição do vídeo
+                - index_transcript: Indexa a transcrição para RAG
+                - rag_query: Responde perguntas sobre o vídeo
                 - journalistic_highlight: Identifica pontos de interesse jornalístico
                 - final_answer: Fornece uma resposta final
                 
@@ -45,13 +47,11 @@ def load_prompt_templates() -> Dict[str, Any]:
             }
     except Exception as e:
         print(f"Error loading prompt templates: {e}")
-        # Return a minimal default if there's an error
         return {"system_prompt": "You are a helpful AI assistant."}
 
 def create_final_answer_tool():
-    """Create the final answer tool"""
     from smolagents.tools import Tool
-    
+
     class FinalAnswerTool(Tool):
         name = "final_answer"
         description = "Provides a final answer to the given problem."
@@ -63,39 +63,36 @@ def create_final_answer_tool():
 
         def __init__(self, *args, **kwargs):
             self.is_initialized = True
-    
+
     return FinalAnswerTool()
 
 def create_agent(groq_api_key: str, huggingface_api_token: str) -> CodeAgent:
-    """Create and configure the agent with all necessary tools"""
-    
-    # Set the Hugging Face API token
     os.environ["HUGGINGFACEHUB_API_TOKEN"] = huggingface_api_token
-    
-    # Initialize tools
+
     youtube_transcriber = YouTubeTranscriberTool()
     web_search = WebSearchTool()
     rag_query = RAGQueryTool()
     journalistic_highlight = JournalisticHighlightTool()
+    summarizer = SummarizationTool()
+    indexer = IndexTranscriptTool()
     final_answer = create_final_answer_tool()
-    
-    # Load prompt templates
+
     prompt_templates = load_prompt_templates()
-    
-    # Initialize model using our custom Groq implementation
+
     model = GroqModel(
         api_key=groq_api_key,
-        model="deepseek-r1-distill-llama-70b",  # Modelo do DeepSeek disponível no Groq
+        model="deepseek-r1-distill-llama-70b",
         temperature=0.5,
         max_tokens=4096
     )
-    
-    # Create agent with tools
+
     agent = CodeAgent(
         model=model,
         tools=[
             youtube_transcriber,
             web_search,
+            summarizer,
+            indexer,
             rag_query,
             journalistic_highlight,
             final_answer
@@ -108,5 +105,5 @@ def create_agent(groq_api_key: str, huggingface_api_token: str) -> CodeAgent:
         description="An AI agent that helps journalists analyze YouTube videos in Brazilian Portuguese",
         prompt_templates=prompt_templates
     )
-    
+
     return agent
