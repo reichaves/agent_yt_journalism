@@ -1,6 +1,7 @@
 
 from typing import Any
 import groq
+from smolagents.schema import ChatMessage
 
 class GroqModel:
     def __init__(self, api_key: str, model: str = "deepseek-r1-distill-llama-70b", temperature: float = 0.3, max_tokens: int = 2048):
@@ -22,6 +23,6 @@ class GroqModel:
                 max_tokens=self.max_tokens,
                 **kwargs
             )
-            return response.choices[0].message.content.strip()
+            return ChatMessage(role="assistant", content=response.choices[0].message.content.strip())
         except Exception as e:
-            return f"Erro ao executar modelo Groq: {str(e)}"
+            return ChatMessage(role="assistant", content=f"Erro ao executar modelo Groq: {str(e)}")
