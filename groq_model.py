@@ -1,3 +1,4 @@
+
 from typing import Any
 import groq
 
@@ -9,8 +10,8 @@ class GroqModel:
         self.max_tokens = max_tokens
         self.client = groq.Client(api_key=self.api_key)
 
-    def __call__(self, prompt: str) -> Any:
-        """Torna o modelo chamável diretamente como função"""
+    def __call__(self, prompt: str, **kwargs) -> Any:
+        """Torna o modelo chamável diretamente e compatível com argumentos adicionais (ex: stop_sequences)"""
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -18,7 +19,8 @@ class GroqModel:
                     {"role": "user", "content": prompt}
                 ],
                 temperature=self.temperature,
-                max_tokens=self.max_tokens
+                max_tokens=self.max_tokens,
+                **kwargs
             )
             return response.choices[0].message.content.strip()
         except Exception as e:
