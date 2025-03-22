@@ -1,3 +1,4 @@
+
 # Novo groq_model.py compatível com SmolAgents (modelo chamável + suporte a kwargs + retorno ChatMessage)
 from typing import Any
 import groq
@@ -24,6 +25,11 @@ class GroqModel:
             # Garante que o prompt seja string (Groq não aceita listas ou objetos complexos)
             if isinstance(prompt, list):
                 prompt = "\n".join(str(p) for p in prompt)
+
+            # Trunca o prompt se estiver muito grande (limite de caracteres para evitar erro 413)
+            max_prompt_chars = 15000
+            if isinstance(prompt, str) and len(prompt) > max_prompt_chars:
+                prompt = prompt[:max_prompt_chars] + "\n[Texto truncado para atender limite de tokens da Groq]"
 
             response = self.client.chat.completions.create(
                 model=self.model,
