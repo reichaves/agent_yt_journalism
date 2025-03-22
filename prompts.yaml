@@ -157,3 +157,8 @@ final_answer:
   pre_messages:
     - role: assistant
       content: "Aqui está minha resposta final:"
+
+post_messages:
+  - role: assistant
+    content: "Se precisar de mais ajuda, estarei por aqui!"
+
