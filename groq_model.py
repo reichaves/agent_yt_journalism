@@ -1,4 +1,3 @@
-
 # Novo groq_model.py compatível com SmolAgents (modelo chamável + suporte a kwargs + retorno ChatMessage)
 from typing import Any
 import groq
@@ -20,6 +19,7 @@ class GroqModel:
     def __call__(self, prompt: str, **kwargs) -> Any:
         """Torna o modelo chamável diretamente e compatível com argumentos adicionais (ex: stop_sequences)"""
         try:
+            kwargs.pop("stop_sequences", None)  # remove argumento não suportado pela Groq API
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
