@@ -20,6 +20,11 @@ class GroqModel:
         """Torna o modelo chamável diretamente e compatível com argumentos adicionais (ex: stop_sequences)"""
         try:
             kwargs.pop("stop_sequences", None)  # remove argumento não suportado pela Groq API
+
+            # Garante que o prompt seja string (Groq não aceita listas ou objetos complexos)
+            if isinstance(prompt, list):
+                prompt = "\n".join(str(p) for p in prompt)
+
             response = self.client.chat.completions.create(
                 model=self.model,
                 messages=[
