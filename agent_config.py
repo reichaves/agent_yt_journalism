@@ -97,8 +97,8 @@ def create_agent(groq_api_key: str, huggingface_api_token: str) -> CodeAgent:
             journalistic_highlight,
             final_answer
         ],
-        max_steps=8,
-        verbosity_level=1,
+        max_steps=12,
+        verbosity_level=2,
         grammar=None,
         planning_interval=None,
         name="JournalistAssistant",
