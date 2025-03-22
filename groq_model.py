@@ -1,4 +1,3 @@
-# Novo groq_model.py sem dependência de MultiStepModel
 from typing import Any
 import groq
 
@@ -10,7 +9,8 @@ class GroqModel:
         self.max_tokens = max_tokens
         self.client = groq.Client(api_key=self.api_key)
 
-    def run(self, prompt: str) -> str:
+    def __call__(self, prompt: str) -> Any:
+        """Torna o modelo chamável diretamente como função"""
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
