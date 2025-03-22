@@ -1,6 +1,8 @@
+
 import os
 import yaml
-from typing import Dict, List, Any
+import functools
+from typing import Dict, List, Any, Optional
 from smolagents import CodeAgent
 from tools.youtube_transcriber import YouTubeTranscriberTool
 from tools.web_search import WebSearchTool
@@ -10,6 +12,11 @@ from tools.summarization import SummarizationTool
 from tools.index_transcript import IndexTranscriptTool
 from groq_model import GroqModel
 
+AGENT_DESCRIPTION = (
+    "Agente de IA para auxiliar jornalistas a analisar vídeos do YouTube em Português do Brasil."
+)
+
+@functools.lru_cache(maxsize=1)
 def load_prompt_templates() -> Dict[str, Any]:
     try:
         if os.path.exists("prompts.yaml"):
@@ -66,7 +73,7 @@ def create_final_answer_tool():
 
     return FinalAnswerTool()
 
-def create_agent(groq_api_key: str, huggingface_api_token: str) -> CodeAgent:
+def create_agent(groq_api_key: str, huggingface_api_token: str, max_steps: int = 12) -> CodeAgent:
     os.environ["HUGGINGFACEHUB_API_TOKEN"] = huggingface_api_token
 
     youtube_transcriber = YouTubeTranscriberTool()
@@ -97,12 +104,12 @@ def create_agent(groq_api_key: str, huggingface_api_token: str) -> CodeAgent:
             journalistic_highlight,
             final_answer
         ],
-        max_steps=12,
+        max_steps=max_steps,
         verbosity_level=2,
         grammar=None,
         planning_interval=None,
         name="JournalistAssistant",
-        description="An AI agent that helps journalists analyze YouTube videos in Brazilian Portuguese",
+        description=AGENT_DESCRIPTION,
         prompt_templates=prompt_templates
     )
 
