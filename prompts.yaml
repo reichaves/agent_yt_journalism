@@ -152,3 +152,8 @@ managed_agent:
   report: |
     Aqui está a resposta final do seu agente gerenciado '{{name}}':
     {{final_answer}}
+
+final_answer:
+  pre_messages:
+    - role: assistant
+      content: "Aqui está minha resposta final:"
