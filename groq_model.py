@@ -1,7 +1,13 @@
 
+# Novo groq_model.py compatível com SmolAgents (modelo chamável + suporte a kwargs + retorno ChatMessage)
 from typing import Any
 import groq
-from smolagents.schema import ChatMessage
+from dataclasses import dataclass
+
+@dataclass
+class ChatMessage:
+    role: str
+    content: str
 
 class GroqModel:
     def __init__(self, api_key: str, model: str = "deepseek-r1-distill-llama-70b", temperature: float = 0.3, max_tokens: int = 2048):
