@@ -9,22 +9,23 @@ langchain-text-splitters>=0.1.0
 faiss-cpu>=1.7.4.post2
 groq>=0.4.0
 
-# LLM and Embeddings
+# LLM / Embeddings
 transformers>=4.36.0
-openai-whisper>=20231117
 sentence-transformers>=2.2.2
+openai>=1.0.0  # Whisper API oficial
 
-# YouTube and Media Processing
+# YouTube / Áudio
 pytube>=15.0.0
+moviepy>=1.0.0
 ffmpeg-python>=0.2.0
 yt-dlp>=2023.11.16
 
-# Web Search and Data Processing
+# Web Search / Outros
 duckduckgo-search>=4.1.0
 markdownify>=0.11.6
 requests>=2.31.0
 
-# Utility Libraries
+# Utilitários
 pytz>=2023.3
 python-dotenv>=1.0.0
 pyyaml>=6.0.1
