@@ -25,19 +25,22 @@ if groq_key and huggingface_token:
         if st.button("Analisar vídeo"):
             st.session_state.conversation_history = []
             with st.spinner("Processando vídeo..."):
-                result = process_video(youtube_url, groq_key, huggingface_token)
+                try:
+                    result = process_video(youtube_url, groq_key, huggingface_token)
 
-                if isinstance(result, str):
-                    st.session_state.conversation_history.append(("assistant", result))
-                elif isinstance(result, dict) and "steps" in result:
-                    for step in result["steps"]:
-                        st.session_state.conversation_history.append(
-                            ("assistant", f"**{step['name']}:**\n\n{step['content']}")
-                        )
-                else:
-                    st.session_state.conversation_history.append(("assistant", str(result)))
+                    if isinstance(result, str):
+                        st.session_state.conversation_history.append(("assistant", result))
+                    elif isinstance(result, dict) and "steps" in result:
+                        for step in result["steps"]:
+                            st.session_state.conversation_history.append(
+                                ("assistant", f"**{step['name']}:**\n\n{step['content']}")
+                            )
+                    else:
+                        st.session_state.conversation_history.append(("assistant", str(result)))
 
-                st.success("Análise concluída!")
+                    st.success("Análise concluída!")
+                except Exception as e:
+                    st.session_state.conversation_history.append(("assistant", f"Erro ao processar vídeo: {e}"))
 
         # Mostrar histórico da análise
         if "conversation_history" in st.session_state:
