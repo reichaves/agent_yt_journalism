@@ -12,10 +12,6 @@ groq_key = st.text_input("🔑 Chave da API do Groq", type="password")
 huggingface_token = st.text_input("🔑 Token da API do Hugging Face", type="password")
 
 if groq_key and huggingface_token:
-    if "agent" not in st.session_state:
-        with st.spinner("Inicializando agente..."):
-            st.session_state.agent = create_agent(groq_key, huggingface_token)
-
     tabs = st.tabs(["Transcrição e análise", "Destaques", "Perguntas"])
 
     with tabs[0]:
