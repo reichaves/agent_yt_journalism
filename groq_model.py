@@ -1,5 +1,4 @@
-
-# Novo groq_model.py compatível com SmolAgents (modelo chamável + suporte a kwargs + retorno ChatMessage)
+# GroqModel atualizado com truncamento, conversão segura e estrutura compatível com SmolAgents
 from typing import Any
 import groq
 from dataclasses import dataclass
@@ -18,15 +17,18 @@ class GroqModel:
         self.client = groq.Client(api_key=self.api_key)
 
     def __call__(self, prompt: str, **kwargs) -> Any:
-        """Torna o modelo chamável diretamente e compatível com argumentos adicionais (ex: stop_sequences)"""
+        """
+        Modelo chamável que adapta o prompt, remove argumentos não aceitos pela Groq
+        e retorna um ChatMessage esperado pelo SmolAgents.
+        """
         try:
-            kwargs.pop("stop_sequences", None)  # remove argumento não suportado pela Groq API
+            kwargs.pop("stop_sequences", None)
 
-            # Garante que o prompt seja string (Groq não aceita listas ou objetos complexos)
+            # Garante que prompt seja string
             if isinstance(prompt, list):
                 prompt = "\n".join(str(p) for p in prompt)
 
-            # Trunca o prompt se estiver muito grande (limite de caracteres para evitar erro 413)
+            # Truncamento para evitar erro 413 (limite de tokens por minuto)
             max_prompt_chars = 15000
             if isinstance(prompt, str) and len(prompt) > max_prompt_chars:
                 prompt = prompt[:max_prompt_chars] + "\n[Texto truncado para atender limite de tokens da Groq]"
@@ -40,6 +42,8 @@ class GroqModel:
                 max_tokens=self.max_tokens,
                 **kwargs
             )
-            return ChatMessage(role="assistant", content=response.choices[0].message.content.strip())
+            content = str(response.choices[0].message.content).strip()
+            return ChatMessage(role="assistant", content=content)
+
         except Exception as e:
             return ChatMessage(role="assistant", content=f"Erro ao executar modelo Groq: {str(e)}")
