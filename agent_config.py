@@ -3,6 +3,7 @@ import yaml
 import functools
 from typing import Dict, Any
 from smolagents import CodeAgent
+from smolagents.grammar import python_agent_grammar
 from tools.youtube_transcriber import YouTubeTranscriberTool
 from tools.web_search import WebSearchTool
 from tools.rag_query import RAGQueryTool
@@ -23,26 +24,8 @@ def load_prompt_templates() -> Dict[str, Any]:
             with open(prompt_path, 'r', encoding='utf-8') as stream:
                 return yaml.safe_load(stream)
         else:
-            # fallback em caso de ausência do YAML
             return {
-                "system_prompt": """
-                Você é um agente de IA especializado em analisar vídeos do YouTube para fins jornalísticos.
-                Siga sempre este ciclo:
-                
-                Thought:
-                Explique seu raciocínio.
-                
-                Code:
-                ```python
-                # código aqui
-                ```
-                <end_code>
-                
-                Observation:
-                Resultado da execução.
-                
-                Termine com a ferramenta final_answer.
-                """
+                "system_prompt": "Você é um assistente de IA útil."
             }
     except Exception as e:
         print(f"Erro ao carregar prompts.yaml: {e}")
@@ -92,7 +75,7 @@ def create_agent(groq_api_key: str, huggingface_api_token: str, max_steps: int =
         tools=tools,
         max_steps=max_steps,
         verbosity_level=2,
-        grammar=None,
+        grammar=python_agent_grammar,
         planning_interval=None,
         name="JournalistAssistant",
         description=AGENT_DESCRIPTION,
