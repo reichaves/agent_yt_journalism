@@ -1,8 +1,12 @@
 # GroqModel atualizado com truncamento, conversão segura e estrutura compatível com SmolAgents
+# Observação: esta classe foi ajustada para uso com agentes baseados no SmolAgents
+# Os parâmetros como model, temperature e max_prompt_chars podem ser alterados externamente
+
 from typing import Any, List
 import groq
 from dataclasses import dataclass
 import re
+from agent_config import AGENT_DESCRIPTION  # compatível com agents que usam descrição externa
 
 @dataclass
 class ChatMessage:
@@ -10,7 +14,14 @@ class ChatMessage:
     content: str
 
 class GroqModel:
-    def __init__(self, api_key: str, model: str = "deepseek-r1-distill-llama-70b", temperature: float = 0.3, max_tokens: int = 2048, max_prompt_chars: int = 15000):
+    def __init__(
+        self,
+        api_key: str,
+        model: str = "deepseek-r1-distill-llama-70b",
+        temperature: float = 0.3,
+        max_tokens: int = 2048,
+        max_prompt_chars: int = 15000  # Valor configurável externamente
+    ):
         self.api_key = api_key
         self.model = model
         self.temperature = temperature
