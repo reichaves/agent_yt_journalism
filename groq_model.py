@@ -6,9 +6,7 @@ from typing import Any, List
 import groq
 from dataclasses import dataclass
 import re
-
-# Evita importação circular com agent_config
-AGENT_DESCRIPTION = "Agente de IA para análise de vídeos jornalísticos."
+import os
 
 @dataclass
 class ChatMessage:
@@ -22,13 +20,15 @@ class GroqModel:
         model: str = "deepseek-r1-distill-llama-70b",
         temperature: float = 0.3,
         max_tokens: int = 2048,
-        max_prompt_chars: int = 15000  # Valor configurável externamente
+        max_prompt_chars: int = 15000,
+        agent_description: str = None  # Permite customizar externamente
     ):
         self.api_key = api_key
         self.model = model
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.max_prompt_chars = max_prompt_chars
+        self.agent_description = agent_description or os.getenv("AGENT_DESCRIPTION", "Agente de IA para análise de vídeos jornalísticos.")
         self.client = groq.Client(api_key=self.api_key)
 
     def __call__(self, prompt: str, **kwargs) -> Any:
