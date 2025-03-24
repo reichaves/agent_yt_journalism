@@ -1,52 +1,57 @@
-from typing import Optional, Any
-import os
+# Novo YouTubeTranscriberTool usando Whisper API (OpenAI)
+import requests
 import tempfile
+import os
+from pytube import YouTube
 from smolagents.tools import Tool
 
 class YouTubeTranscriberTool(Tool):
     name = "youtube_transcriber"
-    description = "Transcribes a YouTube video and returns the text."
-    inputs = {'url': {'type': 'string', 'description': 'The YouTube video URL'}}
+    description = "Transcribes a YouTube video using OpenAI Whisper API."
+    inputs = {
+        'url': {'type': 'string', 'description': 'The YouTube video URL'},
+        'openai_api_key': {'type': 'string', 'description': 'OpenAI API Key'}
+    }
     output_type = "string"
 
     def __init__(self, *args, **kwargs):
         super().__init__()
         self.is_initialized = True
 
-    def forward(self, url: str) -> str:
-        """Downloads and transcribes a YouTube video using Whisper"""
+    def forward(self, url: str, openai_api_key: str) -> str:
         try:
-            # Import necessary libraries
-            from pytube import YouTube
-            import whisper
-            import logging
-            
-            logging.info(f"Transcribing YouTube video: {url}")
-            
-            # Create temporary directory
-            temp_dir = tempfile.mkdtemp()
-            logging.info(f"Created temporary directory: {temp_dir}")
-            
-            # Download audio from YouTube
+            from moviepy.editor import AudioFileClip
+
             yt = YouTube(url)
             audio_stream = yt.streams.filter(only_audio=True).first()
-            audio_file = audio_stream.download(output_path=temp_dir)
-            logging.info(f"Downloaded audio to: {audio_file}")
-            
-            # Load Whisper model and transcribe
-            model = whisper.load_model("base")
-            logging.info("Loaded Whisper model, starting transcription...")
-            
-            result = model.transcribe(audio_file, language="pt")
-            logging.info("Transcription complete")
-            
-            # Clean up
-            os.remove(audio_file)
+            temp_dir = tempfile.mkdtemp()
+            audio_path = os.path.join(temp_dir, "audio.mp4")
+            audio_stream.download(output_path=temp_dir, filename="audio.mp4")
+
+            mp3_path = os.path.join(temp_dir, "audio.mp3")
+            audioclip = AudioFileClip(audio_path)
+            audioclip.write_audiofile(mp3_path)
+            audioclip.close()
+
+            with open(mp3_path, "rb") as f:
+                response = requests.post(
+                    "https://api.openai.com/v1/audio/transcriptions",
+                    headers={"Authorization": f"Bearer {openai_api_key}"},
+                    files={"file": f},
+                    data={"model": "whisper-1", "language": "pt"}
+                )
+
+            os.remove(audio_path)
+            os.remove(mp3_path)
             os.rmdir(temp_dir)
-            logging.info("Cleaned up temporary files")
-            
-            return f"Transcrição completa do vídeo: {yt.title}\n\n{result['text']}"
+
+            if response.status_code == 200:
+                result = response.json()
+                return f"Transcrição completa do vídeo: {yt.title}\n\n{result['text']}"
+            else:
+                return f"Erro na transcrição com Whisper API: {response.text}"
+
         except Exception as e:
             import traceback
             traceback_str = traceback.format_exc()
-            return f"Erro ao transcrever o vídeo: {str(e)}\n\nTraceback:\n{traceback_str}"
+            return f"Erro ao transcrever com Whisper API: {str(e)}\n\n{traceback_str}"
