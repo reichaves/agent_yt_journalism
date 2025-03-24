@@ -1,49 +1,33 @@
-import streamlit as st
+# process_video.py atualizado para usar GroqModel com chunking e fallback
 
-def process_video(youtube_url, agent):
-    """Processa a URL do vídeo do YouTube e executa as etapas de transcrição, resumo, indexação e destaques"""
-    results = {
-        "transcription": None,
-        "summary": None,
-        "highlights": None,
-        "steps": []
-    }
+from agent_config import create_agent
+from groq_model import chunk_text, summarize_chunks
 
+# Função principal para processar um vídeo
+
+def process_video(url: str):
     try:
-        # 1. Transcrição
-        transcription_task = f"Transcreva o vídeo do YouTube com URL {youtube_url}."
+        # Cria o agente com configurações e ferramentas
+        agent = create_agent()
+
+        # Define a tarefa principal para o agente
+        transcription_task = f"""
+Sua tarefa é transcrever e resumir o conteúdo do vídeo do YouTube a seguir:
+
+URL: {url}
+
+O objetivo é fornecer uma transcrição precisa em português do Brasil. Se o vídeo for longo, aplique chunking e resumo.
+"""
+
         transcription_result = agent.run(transcription_task)
-        results["steps"].append({"name": "Transcrição", "content": transcription_result})
-        st.session_state.transcription = transcription_result
 
-        # 2. Resumo
-        if transcription_result:
-            summary_task = "Resuma a transcrição do vídeo que foi transcrito."
-            summary_result = agent.run(summary_task)
-            results["steps"].append({"name": "Resumo", "content": summary_result})
-            st.session_state.summary = summary_result
+        # Se o resultado for muito longo, aplicar chunking + resumo com o próprio modelo
+        if hasattr(transcription_result, 'content') and len(transcription_result.content) > 3000:
+            chunks = chunk_text(transcription_result.content)
+            summarized = summarize_chunks(chunks, summarizer_model=agent.model)
+            return summarized
 
-        # 3. Indexação
-        if transcription_result:
-            index_task = "Indexe a transcrição do vídeo para permitir buscas futuras."
-            index_result = agent.run(index_task)
-            results["steps"].append({"name": "Indexação", "content": "Transcrição indexada com sucesso."})
-            st.session_state.vectorstore = index_result
-
-        # 4. Destaques Jornalísticos
-        if summary_result:
-            highlights_task = "Identifique pontos de interesse jornalístico no vídeo baseado na transcrição ou resumo, considerando o contexto atual."
-            highlights_result = agent.run(highlights_task)
-            results["steps"].append({"name": "Destaques Jornalísticos", "content": highlights_result})
-            st.session_state.highlights = highlights_result
-
-        results["transcription"] = transcription_result
-        results["summary"] = summary_result
-        results["highlights"] = highlights_result
+        return transcription_result.content if hasattr(transcription_result, 'content') else transcription_result
 
     except Exception as e:
-        import traceback
-        error_msg = f"Erro ao processar o vídeo: {str(e)}\n\n{traceback.format_exc()}"
-        results["steps"].append({"name": "Erro", "content": error_msg})
-
-    return results
+        return f"Erro ao processar o vídeo: {e}"
