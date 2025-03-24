@@ -1,8 +1,8 @@
-# Novo YouTubeTranscriberTool usando Whisper API (OpenAI)
+# Novo YouTubeTranscriberTool usando Whisper API (OpenAI) e yt-dlp
 import requests
 import tempfile
 import os
-from pytube import YouTube
+import subprocess
 from smolagents.tools import Tool
 
 class YouTubeTranscriberTool(Tool):
@@ -20,18 +20,17 @@ class YouTubeTranscriberTool(Tool):
 
     def forward(self, url: str, openai_api_key: str) -> str:
         try:
-            from moviepy.editor import AudioFileClip
-
-            yt = YouTube(url)
-            audio_stream = yt.streams.filter(only_audio=True).first()
             temp_dir = tempfile.mkdtemp()
-            audio_path = os.path.join(temp_dir, "audio.mp4")
-            audio_stream.download(output_path=temp_dir, filename="audio.mp4")
-
             mp3_path = os.path.join(temp_dir, "audio.mp3")
-            audioclip = AudioFileClip(audio_path)
-            audioclip.write_audiofile(mp3_path)
-            audioclip.close()
+
+            # Baixar e converter com yt-dlp
+            command = [
+                "yt-dlp",
+                "-x", "--audio-format", "mp3",
+                "--output", mp3_path,
+                url
+            ]
+            subprocess.run(command, check=True)
 
             with open(mp3_path, "rb") as f:
                 response = requests.post(
@@ -41,13 +40,14 @@ class YouTubeTranscriberTool(Tool):
                     data={"model": "whisper-1", "language": "pt"}
                 )
 
-            os.remove(audio_path)
             os.remove(mp3_path)
             os.rmdir(temp_dir)
 
             if response.status_code == 200:
                 result = response.json()
-                return f"Transcrição completa do vídeo: {yt.title}\n\n{result['text']}"
+                return f"Transcrição do vídeo:
+
+{result['text']}"
             else:
                 return f"Erro na transcrição com Whisper API: {response.text}"
 
