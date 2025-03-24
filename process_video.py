@@ -4,10 +4,10 @@ from agent_config import create_agent
 from groq_model import chunk_text, summarize_chunks
 
 # Função principal para processar um vídeo
-def process_video(url: str):
+def process_video(url: str, groq_api_key: str, huggingface_api_token: str):
     try:
         # Cria o agente com configurações e ferramentas
-        agent = create_agent()
+        agent = create_agent(groq_api_key, huggingface_api_token)
 
         # Define a tarefa principal para o agente
         transcription_task = f"""
