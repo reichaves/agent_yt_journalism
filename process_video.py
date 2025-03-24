@@ -4,7 +4,6 @@ from agent_config import create_agent
 from groq_model import chunk_text, summarize_chunks
 
 # Função principal para processar um vídeo
-
 def process_video(url: str):
     try:
         # Cria o agente com configurações e ferramentas
