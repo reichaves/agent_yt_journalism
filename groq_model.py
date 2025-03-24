@@ -66,24 +66,16 @@ class GroqModel:
             return text + '\n<end_code>'
         return text
 
-
 def chunk_text(text: str, max_chars: int = 3000) -> List[str]:
     return [text[i:i+max_chars] for i in range(0, len(text), max_chars)]
 
-
-def summarize_chunks(chunks: List[str], summarizer_model: Any) -> str:
+def summarize_chunks(chunks: List[str], summarizer_model: Any, language: str = "português") -> str:
     summaries = []
     for i, chunk in enumerate(chunks):
         structured_prompt = f"""
-Thought: Preciso resumir o trecho de vídeo abaixo em português de forma clara.
+Thought: Preciso resumir o trecho de vídeo abaixo em {language} de forma clara.
 
 Code:
 ```python
 texto = {repr(chunk)}
 summarize(texto)
-```
-<end_code>
-"""
-        summary = summarizer_model(structured_prompt)
-        summaries.append(summary.content if hasattr(summary, 'content') else str(summary))
-    return "\n\n".join(summaries)
