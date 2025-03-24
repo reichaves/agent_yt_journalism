@@ -4,6 +4,7 @@ from tools.index_transcript import IndexTranscriptTool
 from tools.journalistic_highlight import JournalisticHighlightTool
 from tools.web_search import WebSearchTool
 from tools.youtube_transcriber import YouTubeTranscriberTool
+import streamlit as st
 
 def process_video(url: str, groq_api_key: str, huggingface_api_token: str, openai_api_key: str):
     try:
