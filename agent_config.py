@@ -3,7 +3,6 @@ import yaml
 import functools
 from typing import Dict, Any
 from smolagents import CodeAgent
-from smolagents.grammar import python_agent_grammar
 from tools.youtube_transcriber import YouTubeTranscriberTool
 from tools.web_search import WebSearchTool
 from tools.rag_query import RAGQueryTool
@@ -75,7 +74,7 @@ def create_agent(groq_api_key: str, huggingface_api_token: str, max_steps: int =
         tools=tools,
         max_steps=max_steps,
         verbosity_level=2,
-        grammar=python_agent_grammar,
+        grammar=None,
         planning_interval=None,
         name="JournalistAssistant",
         description=AGENT_DESCRIPTION,
