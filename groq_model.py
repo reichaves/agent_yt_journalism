@@ -1,5 +1,5 @@
 # GroqModel atualizado com truncamento, conversão segura e estrutura compatível com SmolAgents
-from typing import Any
+from typing import Any, List
 import groq
 from dataclasses import dataclass
 
@@ -22,6 +22,9 @@ class GroqModel:
         e retorna um ChatMessage esperado pelo SmolAgents.
         """
         try:
+            # Remove parâmetros não suportados pela API da Groq
+            # Documentação: https://console.groq.com/docs/api-reference/chat
+            # Exemplo de argumento rejeitado: stop_sequences
             kwargs.pop("stop_sequences", None)
 
             # Garante que prompt seja string
@@ -47,3 +50,18 @@ class GroqModel:
 
         except Exception as e:
             return ChatMessage(role="assistant", content=f"Erro ao executar modelo Groq: {str(e)}")
+
+# Funções auxiliares para chunking e resumo de transcrições longas
+
+def chunk_text(text: str, max_chars: int = 3000) -> List[str]:
+    """Divide um texto longo em partes menores com limite de caracteres."""
+    return [text[i:i+max_chars] for i in range(0, len(text), max_chars)]
+
+def summarize_chunks(chunks: List[str], summarizer_model: Any) -> str:
+    """Resume cada chunk usando um modelo de linguagem e concatena os resumos."""
+    summaries = []
+    for i, chunk in enumerate(chunks):
+        prompt = f"Resuma de forma clara e objetiva o seguinte trecho de vídeo em português:\n\n{chunk}"
+        summary = summarizer_model(prompt)
+        summaries.append(summary.content if hasattr(summary, 'content') else str(summary))
+    return "\n\n".join(summaries)
