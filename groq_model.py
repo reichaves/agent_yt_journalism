@@ -26,7 +26,10 @@ class GroqModel:
         self.temperature = temperature
         self.max_tokens = max_tokens
         self.max_prompt_chars = max_prompt_chars
-        self.agent_description = agent_description or os.getenv("AGENT_DESCRIPTION", "Agente de IA para análise de vídeos jornalísticos.")
+        self.agent_description = agent_description or os.getenv(
+            "AGENT_DESCRIPTION",
+            "Agente de IA para análise de vídeos jornalísticos."
+        )
         self.client = groq.Client(api_key=self.api_key)
 
     def __call__(self, prompt: str, **kwargs) -> Any:
@@ -39,7 +42,8 @@ class GroqModel:
             if isinstance(prompt, str) and len(prompt) > self.max_prompt_chars:
                 prompt = (
                     f"Thought: O prompt é muito longo. Truncando para evitar erro.\n\n"
-                    f"Code:\n```python\nprompt = prompt[:{self.max_prompt_chars}] + \"\\n[Texto truncado para atender limite de tokens da Groq]\"\n```\n"
+                    f"Code:\n```python\nprompt = prompt[:{self.max_prompt_chars}] + "
+                    "\"\\n[Texto truncado para atender limite de tokens da Groq]\"\n```\n"
                     f"<end_code>\nObservation: Prompt truncado com sucesso.\n\n"
                     f"{prompt[:self.max_prompt_chars]}"
                 )
@@ -76,6 +80,12 @@ def summarize_chunks(chunks: List[str], summarizer_model: Any, language: str = "
 Thought: Preciso resumir o trecho de vídeo abaixo em {language} de forma clara.
 
 Code:
-```python
+```py
 texto = {repr(chunk)}
 summarize(texto)
+```
+<end_code>
+"""
+        summary = summarizer_model(structured_prompt)
+        summaries.append(summary.content if hasattr(summary, 'content') else str(summary))
+    return "\n\n".join(summaries)
