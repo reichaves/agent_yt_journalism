@@ -2,6 +2,7 @@
 from typing import Any, List
 import groq
 from dataclasses import dataclass
+import re
 
 @dataclass
 class ChatMessage:
@@ -9,43 +10,40 @@ class ChatMessage:
     content: str
 
 class GroqModel:
-    def __init__(self, api_key: str, model: str = "deepseek-r1-distill-llama-70b", temperature: float = 0.3, max_tokens: int = 2048):
+    def __init__(self, api_key: str, model: str = "deepseek-r1-distill-llama-70b", temperature: float = 0.3, max_tokens: int = 2048, max_prompt_chars: int = 15000):
         self.api_key = api_key
         self.model = model
         self.temperature = temperature
         self.max_tokens = max_tokens
+        self.max_prompt_chars = max_prompt_chars
         self.client = groq.Client(api_key=self.api_key)
 
     def __call__(self, prompt: str, **kwargs) -> Any:
-        """
-        Modelo chamável que adapta o prompt, remove argumentos não aceitos pela Groq
-        e retorna um ChatMessage esperado pelo SmolAgents.
-        """
         try:
             # Remove parâmetros não suportados pela API da Groq
-            # Documentação: https://console.groq.com/docs/api-reference/chat
-            # Exemplo de argumento rejeitado: stop_sequences
             kwargs.pop("stop_sequences", None)
 
-            # Garante que prompt seja string
+            # Garante compatibilidade com prompts compostos
             if isinstance(prompt, list):
                 prompt = "\n".join(str(p) for p in prompt)
 
             # Truncamento para evitar erro 413 (limite de tokens por minuto)
-            max_prompt_chars = 15000
-            if isinstance(prompt, str) and len(prompt) > max_prompt_chars:
+            if isinstance(prompt, str) and len(prompt) > self.max_prompt_chars:
                 prompt = f"""
 Thought: O prompt é muito longo e pode ultrapassar o limite de tokens da Groq. Vou truncá-lo para evitar erro.
 
 Code:
 ```py
-prompt = prompt[:{max_prompt_chars}] + "\n[Texto truncado para atender limite de tokens da Groq]"
+prompt = prompt[:{self.max_prompt_chars}] + "\n[Texto truncado para atender limite de tokens da Groq]"
 ```
 <end_code>
 Observation: Prompt truncado com sucesso.
 
-{prompt[:max_prompt_chars]}
+{prompt[:self.max_prompt_chars]}
 """
+
+            # Verifica se há código mal formatado e tenta ajustar
+            prompt = self._sanitize_code_blocks(prompt)
 
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -61,6 +59,12 @@ Observation: Prompt truncado com sucesso.
 
         except Exception as e:
             return ChatMessage(role="assistant", content=f"Erro ao executar modelo Groq: {str(e)}")
+
+    def _sanitize_code_blocks(self, text: str) -> str:
+        """Corrige blocos de código sem <end_code> ou iniciados incorretamente."""
+        if '```' in text and '<end_code>' not in text:
+            return text + '\n<end_code>'
+        return text
 
 # Funções auxiliares para chunking e resumo de transcrições longas
 
