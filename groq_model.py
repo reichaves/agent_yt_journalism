@@ -6,7 +6,9 @@ from typing import Any, List
 import groq
 from dataclasses import dataclass
 import re
-from agent_config import AGENT_DESCRIPTION  # compatível com agents que usam descrição externa
+
+# Evita importação circular com agent_config
+AGENT_DESCRIPTION = "Agente de IA para análise de vídeos jornalísticos."
 
 @dataclass
 class ChatMessage:
