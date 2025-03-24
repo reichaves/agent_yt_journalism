@@ -1,4 +1,5 @@
 # app.py atualizado para incluir OpenAI Whisper API
+# app.py atualizado para incluir OpenAI Whisper API
 import streamlit as st
 from agent_config import create_agent
 from rag_question_tab import render_rag_tab
@@ -24,7 +25,12 @@ if groq_key and huggingface_token and openai_key:
             st.session_state.conversation_history = []
             with st.spinner("Processando vídeo com Whisper API..."):
                 try:
-                    result = process_video(youtube_url, groq_key, huggingface_token, openai_key)
+                    result = process_video(
+                        url=youtube_url,
+                        groq_api_key=groq_key,
+                        huggingface_api_token=huggingface_token,
+                        openai_api_key=openai_key
+                    )
 
                     if isinstance(result, str):
                         st.session_state.conversation_history.append(("assistant", result))
