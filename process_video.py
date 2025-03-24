@@ -1,32 +1,26 @@
-# process_video.py atualizado para usar GroqModel com chunking e fallback
-
+# Novo process_video.py usando Whisper API externamente
 from agent_config import create_agent
 from groq_model import chunk_text, summarize_chunks
+from tools.youtube_transcriber import YouTubeTranscriberTool
 
-# Função principal para processar um vídeo
-def process_video(url: str, groq_api_key: str, huggingface_api_token: str):
+def process_video(url: str, groq_api_key: str, huggingface_api_token: str, openai_api_key: str):
     try:
-        # Cria o agente com configurações e ferramentas
+        # Transcreve o vídeo externamente antes do agente
+        transcriber = YouTubeTranscriberTool()
+        transcript = transcriber.forward(url, openai_api_key=openai_api_key)
+
+        if not isinstance(transcript, str):
+            return "Erro: a transcrição não foi retornada como string."
+
+        # Cria o agente após a transcrição
         agent = create_agent(groq_api_key, huggingface_api_token)
 
-        # Define a tarefa principal para o agente
-        transcription_task = f"""
-Sua tarefa é transcrever e resumir o conteúdo do vídeo do YouTube a seguir:
-
-URL: {url}
-
-O objetivo é fornecer uma transcrição precisa em português do Brasil. Se o vídeo for longo, aplique chunking e resumo.
-"""
-
-        transcription_result = agent.run(transcription_task)
-
-        # Se o resultado for muito longo, aplicar chunking + resumo com o próprio modelo
-        if hasattr(transcription_result, 'content') and len(transcription_result.content) > 3000:
-            chunks = chunk_text(transcription_result.content)
+        # Aplica resumo com chunking se necessário
+        if len(transcript) > 3000:
+            chunks = chunk_text(transcript)
             summarized = summarize_chunks(chunks, summarizer_model=agent.model)
             return summarized
 
-        return transcription_result.content if hasattr(transcription_result, 'content') else transcription_result
-
+        return transcript
     except Exception as e:
         return f"Erro ao processar o vídeo: {e}"
