@@ -1,11 +1,9 @@
-# GroqModel atualizado com truncamento, conversão segura e estrutura compatível com SmolAgents
-# Observação: esta classe foi ajustada para uso com agentes baseados no SmolAgents
-# Os parâmetros como model, temperature e max_prompt_chars podem ser alterados externamente
+# Versão corrigida do groq_model.py com ajuste de sintaxe no bloco Code:
+# Inclui tratamento de prompts longos e formatação segura para CoT
 
 from typing import Any, List
 import groq
 from dataclasses import dataclass
-import re
 import os
 
 @dataclass
@@ -21,7 +19,7 @@ class GroqModel:
         temperature: float = 0.3,
         max_tokens: int = 2048,
         max_prompt_chars: int = 15000,
-        agent_description: str = None  # Permite customizar externamente
+        agent_description: str = None
     ):
         self.api_key = api_key
         self.model = model
@@ -33,29 +31,19 @@ class GroqModel:
 
     def __call__(self, prompt: str, **kwargs) -> Any:
         try:
-            # Remove parâmetros não suportados pela API da Groq
             kwargs.pop("stop_sequences", None)
 
-            # Garante compatibilidade com prompts compostos
             if isinstance(prompt, list):
                 prompt = "\n".join(str(p) for p in prompt)
 
-            # Truncamento para evitar erro 413 (limite de tokens por minuto)
             if isinstance(prompt, str) and len(prompt) > self.max_prompt_chars:
-                prompt = f"""
-Thought: O prompt é muito longo e pode ultrapassar o limite de tokens da Groq. Vou truncá-lo para evitar erro.
+                prompt = (
+                    f"Thought: O prompt é muito longo. Truncando para evitar erro.\n\n"
+                    f"Code:\n```python\nprompt = prompt[:{self.max_prompt_chars}] + \"\\n[Texto truncado para atender limite de tokens da Groq]\"\n```\n"
+                    f"<end_code>\nObservation: Prompt truncado com sucesso.\n\n"
+                    f"{prompt[:self.max_prompt_chars]}"
+                )
 
-Code:
-```py
-prompt = prompt[:{self.max_prompt_chars}] + "\n[Texto truncado para atender limite de tokens da Groq]"
-```
-<end_code>
-Observation: Prompt truncado com sucesso.
-
-{prompt[:self.max_prompt_chars]}
-"""
-
-            # Verifica se há código mal formatado e tenta ajustar
             prompt = self._sanitize_code_blocks(prompt)
 
             response = self.client.chat.completions.create(
@@ -74,26 +62,23 @@ Observation: Prompt truncado com sucesso.
             return ChatMessage(role="assistant", content=f"Erro ao executar modelo Groq: {str(e)}")
 
     def _sanitize_code_blocks(self, text: str) -> str:
-        """Corrige blocos de código sem <end_code> ou iniciados incorretamente."""
         if '```' in text and '<end_code>' not in text:
             return text + '\n<end_code>'
         return text
 
-# Funções auxiliares para chunking e resumo de transcrições longas
 
 def chunk_text(text: str, max_chars: int = 3000) -> List[str]:
-    """Divide um texto longo em partes menores com limite de caracteres."""
     return [text[i:i+max_chars] for i in range(0, len(text), max_chars)]
 
+
 def summarize_chunks(chunks: List[str], summarizer_model: Any) -> str:
-    """Resume cada chunk usando um modelo de linguagem e concatena os resumos."""
     summaries = []
     for i, chunk in enumerate(chunks):
         structured_prompt = f"""
 Thought: Preciso resumir o trecho de vídeo abaixo em português de forma clara.
 
 Code:
-```py
+```python
 texto = {repr(chunk)}
 summarize(texto)
 ```
