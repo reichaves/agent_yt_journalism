@@ -1,7 +1,7 @@
 import streamlit as st
 from agent_config import create_agent
 from rag_question_tab import render_rag_tab
-from process_video import process_video  # função atualizada
+from process_video import process_video
 
 # Interface principal
 st.set_page_config(page_title="Análise de Vídeos para Jornalismo", layout="wide")
@@ -25,18 +25,21 @@ if groq_key and huggingface_token:
         if st.button("Analisar vídeo"):
             st.session_state.conversation_history = []
             with st.spinner("Processando vídeo..."):
-                result = process_video(youtube_url)
+                result = process_video(youtube_url, groq_key, huggingface_token)
 
-                if isinstance(result, dict) and "steps" in result:
+                if isinstance(result, str):
+                    st.session_state.conversation_history.append(("assistant", result))
+                elif isinstance(result, dict) and "steps" in result:
                     for step in result["steps"]:
                         st.session_state.conversation_history.append(
                             ("assistant", f"**{step['name']}:**\n\n{step['content']}")
                         )
                 else:
-                    st.session_state.conversation_history.append(("assistant", result))
+                    st.session_state.conversation_history.append(("assistant", str(result)))
 
                 st.success("Análise concluída!")
 
+        # Mostrar histórico da análise
         if "conversation_history" in st.session_state:
             for speaker, msg in st.session_state.conversation_history:
                 st.markdown(f"**{speaker.title()}:**\n\n{msg}", unsafe_allow_html=True)
