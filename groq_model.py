@@ -34,7 +34,18 @@ class GroqModel:
             # Truncamento para evitar erro 413 (limite de tokens por minuto)
             max_prompt_chars = 15000
             if isinstance(prompt, str) and len(prompt) > max_prompt_chars:
-                prompt = prompt[:max_prompt_chars] + "\n[Texto truncado para atender limite de tokens da Groq]"
+                prompt = f"""
+Thought: O prompt é muito longo e pode ultrapassar o limite de tokens da Groq. Vou truncá-lo para evitar erro.
+
+Code:
+```py
+prompt = prompt[:{max_prompt_chars}] + "\n[Texto truncado para atender limite de tokens da Groq]"
+```
+<end_code>
+Observation: Prompt truncado com sucesso.
+
+{prompt[:max_prompt_chars]}
+"""
 
             response = self.client.chat.completions.create(
                 model=self.model,
@@ -61,7 +72,16 @@ def summarize_chunks(chunks: List[str], summarizer_model: Any) -> str:
     """Resume cada chunk usando um modelo de linguagem e concatena os resumos."""
     summaries = []
     for i, chunk in enumerate(chunks):
-        prompt = f"Resuma de forma clara e objetiva o seguinte trecho de vídeo em português:\n\n{chunk}"
-        summary = summarizer_model(prompt)
+        structured_prompt = f"""
+Thought: Preciso resumir o trecho de vídeo abaixo em português de forma clara.
+
+Code:
+```py
+texto = """{chunk}"""
+summarize(texto)
+```
+<end_code>
+"""
+        summary = summarizer_model(structured_prompt)
         summaries.append(summary.content if hasattr(summary, 'content') else str(summary))
     return "\n\n".join(summaries)
