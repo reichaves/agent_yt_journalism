@@ -1,5 +1,3 @@
-# app.py atualizado para incluir OpenAI Whisper API
-# app.py atualizado para incluir OpenAI Whisper API
 import streamlit as st
 from agent_config import create_agent
 from rag_question_tab import render_rag_tab
@@ -8,11 +6,9 @@ from process_video import process_video
 st.set_page_config(page_title="Análise de Vídeos para Jornalismo", layout="wide")
 st.title("🧠 Agente de IA para Jornalismo Investigativo com Vídeos do YouTube")
 
-# Entrada das chaves de API
-st.subheader("🔐 Chaves de Acesso")
 groq_key = st.text_input("🔑 Chave da API do Groq", type="password")
 huggingface_token = st.text_input("🔑 Token da API do Hugging Face", type="password")
-openai_key = st.text_input("🔑 Chave da API da OpenAI (Whisper API)", type="password")
+openai_key = st.text_input("🔑 Chave da API da OpenAI (para Whisper)", type="password")
 
 if groq_key and huggingface_token and openai_key:
     tabs = st.tabs(["Transcrição e análise", "Destaques", "Perguntas"])
@@ -23,17 +19,17 @@ if groq_key and huggingface_token and openai_key:
 
         if st.button("Analisar vídeo"):
             st.session_state.conversation_history = []
-            with st.spinner("Processando vídeo com Whisper API..."):
+            with st.spinner("Processando vídeo..."):
                 try:
-                    result = process_video(
-                        url=youtube_url,
-                        groq_api_key=groq_key,
-                        huggingface_api_token=huggingface_token,
-                        openai_api_key=openai_key
-                    )
+                    result = process_video(youtube_url, groq_key, huggingface_token, openai_key)
 
                     if isinstance(result, str):
                         st.session_state.conversation_history.append(("assistant", result))
+                    elif isinstance(result, dict) and "steps" in result:
+                        for step in result["steps"]:
+                            st.session_state.conversation_history.append(
+                                ("assistant", f"**{step['name']}:**\n\n{step['content']}")
+                            )
                     else:
                         st.session_state.conversation_history.append(("assistant", str(result)))
 
@@ -55,4 +51,4 @@ if groq_key and huggingface_token and openai_key:
     with tabs[2]:
         render_rag_tab()
 else:
-    st.info("Por favor, insira todas as chaves de API para iniciar.")
+    st.info("Por favor, insira suas chaves de API para iniciar.")
