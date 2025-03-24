@@ -77,7 +77,7 @@ Thought: Preciso resumir o trecho de vídeo abaixo em português de forma clara.
 
 Code:
 ```py
-texto = """{chunk}"""
+texto = {repr(chunk)}
 summarize(texto)
 ```
 <end_code>
