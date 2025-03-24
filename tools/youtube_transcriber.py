@@ -1,4 +1,3 @@
-# Novo YouTubeTranscriberTool usando Whisper API (OpenAI) e yt-dlp
 import requests
 import tempfile
 import os
@@ -21,7 +20,8 @@ class YouTubeTranscriberTool(Tool):
     def forward(self, url: str, openai_api_key: str) -> str:
         try:
             temp_dir = tempfile.mkdtemp()
-            mp3_path = os.path.join(temp_dir, "audio.mp3")
+            mp3_path = os.path.join(temp_dir, "audio.%(ext)s")
+            final_path = os.path.join(temp_dir, "audio.mp3")
 
             # Baixar e converter com yt-dlp
             command = [
@@ -32,7 +32,14 @@ class YouTubeTranscriberTool(Tool):
             ]
             subprocess.run(command, check=True)
 
-            with open(mp3_path, "rb") as f:
+            # Corrige o nome do arquivo gerado
+            downloaded_files = os.listdir(temp_dir)
+            for file in downloaded_files:
+                if file.endswith(".mp3"):
+                    os.rename(os.path.join(temp_dir, file), final_path)
+                    break
+
+            with open(final_path, "rb") as f:
                 response = requests.post(
                     "https://api.openai.com/v1/audio/transcriptions",
                     headers={"Authorization": f"Bearer {openai_api_key}"},
@@ -40,14 +47,12 @@ class YouTubeTranscriberTool(Tool):
                     data={"model": "whisper-1", "language": "pt"}
                 )
 
-            os.remove(mp3_path)
+            os.remove(final_path)
             os.rmdir(temp_dir)
 
             if response.status_code == 200:
                 result = response.json()
-                return f"Transcrição do vídeo:
-
-{result['text']}"
+                return f"Transcrição do vídeo:\n\n{result['text']}"
             else:
                 return f"Erro na transcrição com Whisper API: {response.text}"
 
