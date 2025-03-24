@@ -1,8 +1,7 @@
-
 import os
 import yaml
 import functools
-from typing import Dict, List, Any, Optional
+from typing import Dict, Any
 from smolagents import CodeAgent
 from tools.youtube_transcriber import YouTubeTranscriberTool
 from tools.web_search import WebSearchTool
@@ -19,50 +18,43 @@ AGENT_DESCRIPTION = (
 @functools.lru_cache(maxsize=1)
 def load_prompt_templates() -> Dict[str, Any]:
     try:
-        if os.path.exists("prompts.yaml"):
-            with open("prompts.yaml", 'r', encoding='utf-8') as stream:
+        prompt_path = os.path.join(os.path.dirname(__file__), "prompts.yaml")
+        if os.path.exists(prompt_path):
+            with open(prompt_path, 'r', encoding='utf-8') as stream:
                 return yaml.safe_load(stream)
         else:
+            # fallback em caso de ausência do YAML
             return {
                 "system_prompt": """
                 Você é um agente de IA especializado em analisar vídeos do YouTube para fins jornalísticos.
-                Seu objetivo é ajudar jornalistas a extrair informações valiosas de vídeos em Português do Brasil.
+                Siga sempre este ciclo:
                 
-                Para resolver as tarefas, você deve seguir um ciclo de 'Thought:', 'Code:', e 'Observation:'.
+                Thought:
+                Explique seu raciocínio.
                 
-                Em cada etapa, você deve:
-                1. Explicar seu raciocínio no bloco 'Thought:'
-                2. Escrever código Python simples no bloco 'Code:' (encerrado com '<end_code>')
-                3. Observar os resultados no bloco 'Observation:'
+                Code:
+                ```python
+                # código aqui
+                ```
+                <end_code>
                 
-                Suas respostas devem ser claras, estruturadas e úteis para jornalistas investigativos.
-                No final, você deve fornecer uma resposta completa usando a ferramenta `final_answer`.
+                Observation:
+                Resultado da execução.
                 
-                Você tem acesso às seguintes ferramentas:
-                - youtube_transcriber: Transcreve um vídeo do YouTube
-                - web_search: Busca informações na web
-                - video_summarizer: Resume a transcrição do vídeo
-                - index_transcript: Indexa a transcrição para RAG
-                - rag_query: Responde perguntas sobre o vídeo
-                - journalistic_highlight: Identifica pontos de interesse jornalístico
-                - final_answer: Fornece uma resposta final
-                
-                Lembre-se de que os jornalistas precisam de informações precisas, contextualizadas e com
-                valor noticioso. Sempre indique quando uma informação precisa ser verificada ou investigada
-                mais a fundo.
+                Termine com a ferramenta final_answer.
                 """
             }
     except Exception as e:
-        print(f"Error loading prompt templates: {e}")
-        return {"system_prompt": "You are a helpful AI assistant."}
+        print(f"Erro ao carregar prompts.yaml: {e}")
+        return {"system_prompt": "Você é um assistente de IA útil."}
 
 def create_final_answer_tool():
     from smolagents.tools import Tool
 
     class FinalAnswerTool(Tool):
         name = "final_answer"
-        description = "Provides a final answer to the given problem."
-        inputs = {'answer': {'type': 'any', 'description': 'The final answer to the problem'}}
+        description = "Fornece uma resposta final para o problema."
+        inputs = {'answer': {'type': 'any', 'description': 'A resposta final ao problema'}}
         output_type = "any"
 
         def forward(self, answer: Any) -> Any:
@@ -76,13 +68,15 @@ def create_final_answer_tool():
 def create_agent(groq_api_key: str, huggingface_api_token: str, max_steps: int = 12) -> CodeAgent:
     os.environ["HUGGINGFACEHUB_API_TOKEN"] = huggingface_api_token
 
-    youtube_transcriber = YouTubeTranscriberTool()
-    web_search = WebSearchTool()
-    rag_query = RAGQueryTool()
-    journalistic_highlight = JournalisticHighlightTool()
-    summarizer = SummarizationTool()
-    indexer = IndexTranscriptTool()
-    final_answer = create_final_answer_tool()
+    tools = [
+        YouTubeTranscriberTool(),
+        WebSearchTool(),
+        SummarizationTool(),
+        IndexTranscriptTool(),
+        RAGQueryTool(),
+        JournalisticHighlightTool(),
+        create_final_answer_tool()
+    ]
 
     prompt_templates = load_prompt_templates()
 
@@ -95,15 +89,7 @@ def create_agent(groq_api_key: str, huggingface_api_token: str, max_steps: int =
 
     agent = CodeAgent(
         model=model,
-        tools=[
-            youtube_transcriber,
-            web_search,
-            summarizer,
-            indexer,
-            rag_query,
-            journalistic_highlight,
-            final_answer
-        ],
+        tools=tools,
         max_steps=max_steps,
         verbosity_level=2,
         grammar=None,
