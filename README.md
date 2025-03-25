@@ -115,7 +115,6 @@ MIT License. See `LICENSE` file.
 
 Developed by Reinaldo Chaves (@reichaves) — journalist, data scientist, and investigative technologist.  
 
-Abraji (Brazilian Association of Investigative Journalism) experimental project.
 
 ---
 
