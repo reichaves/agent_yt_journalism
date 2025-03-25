@@ -1,6 +1,9 @@
 import streamlit as st
 from process_video import process_video
 from rag_question_tab import render_rag_tab
+import os
+
+os.environ["WATCHDOG_USE_POLLING"] = "true"
 
 # Aba de configurações no sidebar
 with st.sidebar:
