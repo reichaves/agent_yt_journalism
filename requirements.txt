@@ -1,6 +1,6 @@
-# Streamlit e núcleo
+# App principal
 streamlit==1.32.0
-smolagents==0.1.0
+smolagents==0.1.2
 langchain==0.1.16
 langchain-groq==0.1.4
 langchain-community==0.0.34
@@ -13,20 +13,19 @@ faiss-cpu==1.7.4
 sentence-transformers==2.2.2
 transformers==4.36.2
 
-# Whisper
-openai==1.13.3
+# OpenAI API (Whisper)
+openai==1.58.1
 
-# YouTube e áudio
+# YouTube + áudio
 yt-dlp==2023.11.16
 moviepy==1.0.3
 ffmpeg-python==0.2.0
 
-# Web e utils
+# Web search e utilitários
 duckduckgo-search==4.1
 markdownify==0.11.6
-requests==2.31.0
 pytz==2023.3
-python-dotenv==1.0.0
+python-dotenv>=1.0.1
 pyyaml==6.0.1
 uuid==1.30
 streamlit-extras==0.3.0
