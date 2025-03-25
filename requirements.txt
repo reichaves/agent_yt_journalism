@@ -1,6 +1,4 @@
-# requirements.txt atualizado para incluir yt-dlp e Whisper API
-
-# Core
+# Core do projeto
 streamlit>=1.32.0
 smolagents>=0.1.1
 langchain>=0.1.0
@@ -8,25 +6,27 @@ langchain-groq>=0.1.0
 langchain-community>=0.1.0
 langchain-core>=0.1.0
 langchain-text-splitters>=0.1.0
-faiss-cpu>=1.7.4.post2
-groq>=0.4.0
 
-# LLM / Embeddings
+# FAISS e embeddings
+faiss-cpu==1.7.4
+torch==2.0.1
+sentence-transformers==2.2.2
 transformers>=4.36.0
-sentence-transformers>=2.2.2
-openai>=1.0.0  # Whisper API oficial
 
-# YouTube / Áudio
+# Whisper e OpenAI
+openai>=1.0.0
+
+# YouTube e áudio
 yt-dlp>=2023.11.16
 moviepy>=1.0.0
 ffmpeg-python>=0.2.0
 
-# Web Search / Outros
+# Web search
 duckduckgo-search>=4.1.0
 markdownify>=0.11.6
-requests>=2.31.0
 
 # Utilitários
+requests>=2.31.0
 pytz>=2023.3
 python-dotenv>=1.0.0
 pyyaml>=6.0.1
