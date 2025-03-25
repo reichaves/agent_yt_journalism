@@ -47,7 +47,7 @@ def create_final_answer_tool():
 
     return FinalAnswerTool()
 
-def create_agent(groq_api_key: str, huggingface_api_token: str, max_steps: int = 12) -> CodeAgent:
+def create_agent(groq_api_key: str, huggingface_api_token: str, max_steps: int = 1) -> CodeAgent:
     os.environ["HUGGINGFACEHUB_API_TOKEN"] = huggingface_api_token
 
     tools = [
@@ -73,7 +73,7 @@ def create_agent(groq_api_key: str, huggingface_api_token: str, max_steps: int =
         model=model,
         tools=tools,
         max_steps=max_steps,
-        verbosity_level=2,
+        verbosity_level=1,
         grammar=None,
         planning_interval=None,
         name="JournalistAssistant",
