@@ -1,34 +1,56 @@
 import streamlit as st
+from groq import Client
 
 def render_rag_tab():
-    st.header("📚 Pergunte sobre o conteúdo do vídeo")
+    st.header("📌 Perguntas sobre o vídeo")
+    question = st.text_input("Digite sua pergunta sobre o conteúdo transcrito:")
+    api_key = st.session_state.get("groq_api_key", "")
+    transcript = st.session_state.get("transcript", "")
+    vectorstore = st.session_state.get("vectorstore", None)
 
-    # Verifica se há transcrição indexada
-    if "vectorstore" not in st.session_state or st.session_state.vectorstore is None:
-        st.warning("Nenhuma transcrição indexada disponível. Transcreva e indexe um vídeo primeiro.")
+    if not api_key:
+        st.warning("Por favor, insira sua chave de API do Groq na aba 'Configurações'.")
         return
 
-    # Campo de pergunta do usuário
-    user_question = st.text_input("Digite sua pergunta sobre o conteúdo do vídeo:")
+    if not transcript:
+        st.warning("Transcrição não encontrada. Transcreva e indexe um vídeo primeiro.")
+        return
 
-    if st.button("Responder") and user_question:
-        with st.spinner("Gerando resposta..."):
+    if st.button("Responder"):
+        with st.spinner("Consultando..."):
             try:
-                # Executa pergunta via agente
-                response = st.session_state.agent.run(
-                    f"Responda à seguinte pergunta com base na transcrição indexada: {user_question}"
-                )
-
-                # Extrai conteúdo textual da resposta
-                final_response = response.content if hasattr(response, "content") else str(response)
-
-                # Armazena no histórico
-                if "conversation_history" not in st.session_state:
-                    st.session_state.conversation_history = []
-                st.session_state.conversation_history.append(("user", user_question))
-                st.session_state.conversation_history.append(("assistant", final_response))
-
-                st.markdown(f"**Resposta:**\n\n{final_response}")
-
+                response = ask_question(question, transcript, api_key)
+                st.markdown("### Resposta")
+                st.write(response)
             except Exception as e:
-                st.error(f"Erro ao gerar resposta: {str(e)}")
+                st.error(f"Erro ao processar a pergunta: {str(e)}")
+
+def ask_question(question: str, transcript: str, groq_api_key: str) -> str:
+    client = Client(api_key=groq_api_key)
+
+    system_prompt = (
+        "Você é um assistente especializado em vídeos que responde perguntas com base "
+        "em transcrições. Responda apenas com informações encontradas no contexto fornecido. "
+        "Se a resposta não estiver no contexto, diga que não é possível responder com base na transcrição."
+    )
+
+    user_prompt = f"""
+    Responda à seguinte pergunta com base no conteúdo abaixo:
+
+    Transcrição do vídeo:
+    {transcript}
+
+    Pergunta: {question}
+    """
+
+    chat_response = client.chat.completions.create(
+        model="deepseek-r1-distill-llama-70b",
+        messages=[
+            {"role": "system", "content": system_prompt},
+            {"role": "user", "content": user_prompt}
+        ],
+        temperature=0.2,
+        max_tokens=2048
+    )
+
+    return chat_response.choices[0].message.content
