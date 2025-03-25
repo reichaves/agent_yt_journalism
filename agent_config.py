@@ -73,7 +73,6 @@ def create_agent(groq_api_key: str, huggingface_api_token: str, max_steps: int =
         model=model,
         tools=tools,
         max_steps=max_steps,
-        run_mode="finish",       # modo resposta direta
         grammar=None,
         planning_interval=None,
         verbosity_level=1,
