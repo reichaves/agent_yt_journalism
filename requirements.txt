@@ -1,34 +1,32 @@
-# Core do projeto
-streamlit>=1.32.0
-smolagents>=0.1.1
-langchain>=0.1.0
-langchain-groq>=0.1.0
-langchain-community>=0.1.0
-langchain-core>=0.1.0
-langchain-text-splitters>=0.1.0
+# Streamlit e dependências principais
+streamlit==1.32.0
+smolagents==0.1.1
+langchain==0.1.16
+langchain-groq==0.1.4
+langchain-community==0.0.34
+langchain-core==0.1.44
+langchain-text-splitters==0.0.1
 
-# FAISS e embeddings
-faiss-cpu==1.7.4
+# Modelos e embeddings
 torch==2.0.1
+faiss-cpu==1.7.4
 sentence-transformers==2.2.2
-transformers>=4.36.0
+transformers==4.36.2
 
-# Whisper e OpenAI
-openai>=1.0.0
+# OpenAI Whisper
+openai==1.13.3
 
-# YouTube e áudio
-yt-dlp>=2023.11.16
-moviepy>=1.0.0
-ffmpeg-python>=0.2.0
+# Download e conversão de áudio do YouTube
+yt-dlp==2023.11.16
+moviepy==1.0.3
+ffmpeg-python==0.2.0
 
-# Web search
-duckduckgo-search>=4.1.0
-markdownify>=0.11.6
-
-# Utilitários
-requests>=2.31.0
-pytz>=2023.3
-python-dotenv>=1.0.0
-pyyaml>=6.0.1
-uuid>=1.30
-streamlit-extras>=0.3.0
+# Busca na web e utilitários
+duckduckgo-search==4.1
+markdownify==0.11.6
+requests==2.31.0
+pytz==2023.3
+python-dotenv==1.0.0
+pyyaml==6.0.1
+uuid==1.30
+streamlit-extras==0.3.0
