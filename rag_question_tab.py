@@ -11,6 +11,11 @@ def rag_question_tab():
     openai_api_key = st.text_input("Sua OpenAI API Key", type="password", key="openai_rag_key")
     huggingface_api_key = st.text_input("Sua Hugging Face API Key", type="password", key="huggingface_rag_key")
 
+    use_general_knowledge = st.checkbox(
+        "Permitir que o modelo use conhecimento geral além da transcrição",
+        value=True
+    )
+
     if url and question and openai_api_key and huggingface_api_key:
         if (
             "vectorstore" not in st.session_state
@@ -32,7 +37,8 @@ def rag_question_tab():
                 result = rag_tool.forward(
                     question=question,
                     vectorstore=vectorstore,
-                    llm_api_key=openai_api_key
+                    llm_api_key=openai_api_key,
+                    use_general_knowledge=use_general_knowledge
                 )
             st.markdown("### Resposta:")
             st.write(result)
