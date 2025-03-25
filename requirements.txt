@@ -1,6 +1,6 @@
-# Streamlit e dependências principais
+# Streamlit e núcleo
 streamlit==1.32.0
-smolagents==1.2.2
+smolagents==0.1.3
 langchain==0.1.16
 langchain-groq==0.1.4
 langchain-community==0.0.34
@@ -16,12 +16,12 @@ transformers==4.36.2
 # OpenAI Whisper
 openai==1.13.3
 
-# Download e conversão de áudio do YouTube
+# YouTube / áudio
 yt-dlp==2023.11.16
 moviepy==1.0.3
 ffmpeg-python==0.2.0
 
-# Busca na web e utilitários
+# Web search e utilitários
 duckduckgo-search==4.1
 markdownify==0.11.6
 requests==2.31.0
