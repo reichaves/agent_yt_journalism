@@ -4,9 +4,15 @@ from groq import Client
 def render_rag_tab():
     st.header("📌 Perguntas sobre o vídeo")
     question = st.text_input("Digite sua pergunta sobre o conteúdo transcrito:")
-    api_key = st.session_state.get("groq_api_key", "")
+
+    # Busca a chave da API em diferentes formas possíveis
+    api_key = (
+        st.session_state.get("groq_api_key")
+        or st.session_state.get("groq_key")
+        or st.session_state.get("api_key")
+    )
+
     transcript = st.session_state.get("transcript", "")
-    vectorstore = st.session_state.get("vectorstore", None)
 
     if not api_key:
         st.warning("Por favor, insira sua chave de API do Groq na aba 'Configurações'.")
@@ -34,14 +40,13 @@ def ask_question(question: str, transcript: str, groq_api_key: str) -> str:
         "Se a resposta não estiver no contexto, diga que não é possível responder com base na transcrição."
     )
 
-    user_prompt = f"""
-    Responda à seguinte pergunta com base no conteúdo abaixo:
+    user_prompt = f"""Responda à seguinte pergunta com base no conteúdo abaixo:
 
-    Transcrição do vídeo:
-    {transcript}
+Transcrição do vídeo:
+{transcript}
 
-    Pergunta: {question}
-    """
+Pergunta: {question}
+"""  # fim do prompt
 
     chat_response = client.chat.completions.create(
         model="deepseek-r1-distill-llama-70b",
