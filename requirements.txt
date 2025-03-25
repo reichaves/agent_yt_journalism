@@ -8,7 +8,7 @@ langchain-core==0.1.44
 langchain-text-splitters==0.0.1
 
 # Modelos e embeddings
-torch==2.0.1
+torch==2.2.0
 faiss-cpu==1.7.4
 sentence-transformers==2.2.2
 transformers==4.36.2
